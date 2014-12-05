@@ -1,0 +1,36 @@
+---
+- name: Install Dell PowerVault manager
+  hosts: storage-manager
+  user: root
+  vars:
+     base_url: http://downloads.dell.com/FOLDER02338928M/1/
+     iso_name: DELL_MDSS_Consolidated_RDVD_5_1_0_9.iso
+     iso_sum: 6ed17e58d65159a6d4b04ebaca24d19b516030feacbf269e13b7aeac39459bdc
+     mountpoint: /tmp/dell
+      
+  tasks:
+    - name: Download the installation CD-ROM
+      get_url: 
+        url={{base_url}}/{{iso_name}}
+        dest=/root/{{iso_name}}
+        sha256sum={{iso_sum}}
+
+    - name: Create mountpoint
+      file: dest={{mountpoint}} state=directory
+
+    - name: Mount installaction CD-ROM
+      mount: name={{mountpoint}} src=/root/{{iso_name}} opts=loop,ro state=mounted fstype=auto
+
+    - name: Upload response file
+      copy: src=files/dell-responses.properties dest=/tmp/dell-responses.properties
+
+
+    - name: Install requisites
+      yum: name={{ item }}
+      with_items:
+        - glibc.i686
+        - xdpyinfo
+        - xorg-x11-xauth
+
+    #- name: Install MDSS 
+    #  shell: {{mountpoint}}/linux/mdss_install.bin -i silent -f /tmp/dell-responses.propertios
